@@ -1,5 +1,5 @@
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
-import 'package:firebase_auth_1/presentation/pages/auth_pages/login_page.dart';
+import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -19,150 +19,68 @@ class _EmailSignupState extends State<EmailSignup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey,
       appBar: AppBar(
-        title: Text('Email Sign Up'),
-        backgroundColor: Colors.blueGrey,
+        title: Text(
+          'Email Sign Up',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
       ),
       body: Center(
-        child: BlocListener<AuthBloc, AuthState>(
+        child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is AuthInitial) {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => LogInPage()),
-                (route) => false,
-              );
+            if (state is AuthSignUpSuccessState) {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text('Sign Up Successful')));
+              Navigator.pop(context);
             }
           },
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextField(
-                  controller: emailController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    fillColor: const Color.fromARGB(101, 217, 209, 217),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 169, 168, 169),
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 169, 168, 169),
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 221, 219, 221),
-                        width: 2,
-                      ),
-                    ),
+          builder: (context, state) {
+            if (state is AuthLoadingState) {
+              return Center(child: CircularProgressIndicator());
+            }
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextfieldWidget(
                     hintText: 'Email',
-                    hintStyle: TextStyle(
-                      color: const Color.fromARGB(255, 221, 219, 221),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.email_outlined,
-                      color: const Color.fromARGB(255, 221, 219, 221),
-                    ),
+                    controller: emailController,
+                    prefixIcon: Icons.email_outlined,
                   ),
-                  cursorColor: Colors.white,
-                ),
-                SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    fillColor: const Color.fromARGB(101, 217, 209, 217),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 169, 168, 169),
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 169, 168, 169),
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: const Color.fromARGB(255, 221, 219, 221),
-                        width: 2,
-                      ),
-                    ),
+                  SizedBox(height: 20),
+                  TextfieldWidget(
                     hintText: 'Password',
-                    hintStyle: TextStyle(
-                      color: const Color.fromARGB(255, 221, 219, 221),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.lock_outline,
-                      color: const Color.fromARGB(255, 221, 219, 221),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isObscure
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: const Color.fromARGB(255, 221, 219, 221),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isObscure = !isObscure;
-                        });
-                      },
+                    controller: passwordController,
+                    prefixIcon: Icons.lock_outline,
+                    sufixIcon: isObscure
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    onTap: () => setState(() {
+                      isObscure = !isObscure;
+                    }),
+                    obscureText: isObscure,
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<AuthBloc>().add(
+                        RealSignUpButtonClickedEvent(
+                          email: emailController.text,
+                          password: passwordController.text,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
-                  obscureText: isObscure,
-                  cursorColor: Colors.white,
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                      const Color.fromARGB(101, 217, 209, 217),
-                    ),
-                    padding: MaterialStateProperty.all(
-                      EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                    ),
-                    shape: MaterialStateProperty.all(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(color: Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
-                  onPressed: () {
-                    context.read<AuthBloc>().add(
-                      RealSignUpButtonClickedEvent(
-                        email: emailController.text,
-                        password: passwordController.text,
-                      ),
-                    );
-                  },
-                  child: Text('Sign Up', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

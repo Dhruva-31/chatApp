@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 class OptionWidget extends StatelessWidget {
   final IconData icon;
   final String label;
-
   final VoidCallback onTap;
-
   const OptionWidget({
     super.key,
     required this.icon,

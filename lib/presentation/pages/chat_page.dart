@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth_1/core/utils/chat_settings.dart';
 import 'package:firebase_auth_1/core/utils/message_settings.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
 import 'package:firebase_auth_1/data/services/firebase_methods.dart';
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/presentation/pages/UserProfilePage.dart';
+import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatefulWidget {
@@ -24,10 +27,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addObserver(this);
     roomId = FirestoreMethods().generateRoomId(myId, widget.secondUser.uid);
-    FirestoreMethods().markMessageAsSeen(roomId, widget.secondUser.uid);
+    // FirestoreMethods().markMessageAsSeen(roomId, widget.secondUser.uid);
+    FirestoreMethods().resetUnseenCount(roomId, myId);
     _startListeningForNewMessages();
     messageController.addListener(() {
       setState(() {});
@@ -38,9 +41,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _isInForeground = state == AppLifecycleState.resumed;
 
-    if (_isInForeground) {
-      FirestoreMethods().markMessageAsSeen(roomId, widget.secondUser.uid);
-    }
+    // if (_isInForeground) {
+    //   FirestoreMethods().markMessageAsSeen(roomId, widget.secondUser.uid);
+    // }
   }
 
   void _startListeningForNewMessages() {
@@ -76,39 +79,50 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final userData = widget.secondUser;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(double.infinity, 40),
-        child: StreamBuilder(
-          stream: FirestoreMethods().getUserDetail(userData.uid),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return AppBar(title: Center(child: CircularProgressIndicator()));
-            }
+      appBar: AppBar(
+        leadingWidth: 40,
+        titleSpacing: 0,
+        toolbarHeight: 60,
+        title: GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => UserProfilePage(user: userData),
+            ),
+          ),
+          child: StreamBuilder(
+            stream: FirestoreMethods().getUserDetail(userData.uid),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-            final data = snapshot.data!;
-            final isOnline = data.isOnline;
-            final lastSeen = data.lastSeen;
-            final name = data.name;
-            final profilePic = data.profilePic;
+              final data = snapshot.data!;
+              final isOnline = data.isOnline;
+              final lastSeen = data.lastSeen;
+              final name = data.name;
+              final profilePic = data.profilePic;
 
-            return AppBar(
-              leadingWidth: 40,
-              titleSpacing: 0,
-              title: Row(
+              return Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.grey.shade300,
-                    backgroundImage: profilePic.isNotEmpty
-                        ? NetworkImage(profilePic)
-                        : null,
-                    child: (profilePic.isEmpty)
-                        ? Icon(
-                            Icons.person,
-                            size: 30,
-                            color: Colors.grey.shade700,
-                          )
-                        : null,
+                  CachedNetworkImage(
+                    imageUrl: profilePic,
+                    placeholder: (context, url) => CircleAvatar(
+                      radius: 18,
+                      child: CircularProgressIndicator(),
+                    ),
+                    errorWidget: (context, url, error) => CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.grey.shade300,
+                      child: Icon(
+                        Icons.person,
+                        size: 18,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    imageBuilder: (context, imageProvider) => CircleAvatar(
+                      radius: 18,
+                      backgroundImage: imageProvider,
+                    ),
                   ),
                   SizedBox(width: 10),
                   Column(
@@ -116,38 +130,38 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     children: [
                       Text(
                         name,
-                        style: TextStyle(fontSize: 20, color: Colors.white),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       data.typingTo == myId
                           ? Text(
                               'typing...',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(
+                                    color: Colors.green,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                             )
                           : Text(
                               isOnline
                                   ? 'online'
                                   : 'last seen at ${lastSeen.hour.toString().padLeft(2, '0')}:${lastSeen.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: Colors.white70),
                             ),
                     ],
                   ),
                 ],
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () => showChatOptions(context, roomId, myId),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_vert, color: Colors.white),
+            onPressed: () =>
+                showChatOptions(context, roomId, myId, userData.uid),
+          ),
+        ],
       ),
 
       body: Padding(
@@ -168,7 +182,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     child: Center(
                       child: Text(
                         'No messages yet',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ),
                   );
@@ -214,8 +228,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                       padding: EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: message.senderId == myId
-                                            ? Colors.greenAccent
-                                            : Colors.white,
+                                            ? const Color(0xFF6C63FF)
+                                            : const Color.fromARGB(
+                                                133,
+                                                72,
+                                                72,
+                                                72,
+                                              ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Column(
@@ -224,7 +243,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         children: [
                                           Text(
                                             message.text,
-                                            style: TextStyle(fontSize: 16),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge,
                                           ),
                                         ],
                                       ),
@@ -236,10 +257,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         Text(
                                           "${message.createdAt.hour.toString().padLeft(2, '0')}:"
                                           "${message.createdAt.minute.toString().padLeft(2, '0')}",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white,
-                                          ),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
                                         ),
                                         SizedBox(width: 5),
                                         if (message.senderId == myId)
@@ -269,34 +289,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
+                  child: TextfieldWidget(
                     controller: messageController,
-                    style: TextStyle(color: Colors.white),
-                    minLines: 1,
                     maxLines: 5,
-                    decoration: InputDecoration(
-                      fillColor: const Color.fromARGB(101, 217, 209, 217),
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 169, 168, 169),
-                          width: 2,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: const Color.fromARGB(255, 169, 168, 169),
-                          width: 2,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.white, width: 2),
-                      ),
-                    ),
-                    cursorColor: Colors.white,
+                    minLines: 1,
+                    borderRaidus: 20,
                     onChanged: (value) {
                       FirestoreMethods().updateUserTyping(
                         value.isNotEmpty ? userData.uid : '',
@@ -304,13 +301,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     },
                   ),
                 ),
+
                 SizedBox(width: 10),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30),
                     color: messageController.text.isEmpty
                         ? const Color.fromARGB(255, 169, 168, 169)
-                        : Colors.greenAccent,
+                        : const Color(0xFF6C63FF),
                   ),
                   child: IconButton(
                     onPressed: () {
@@ -322,7 +320,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       );
                       messageController.clear();
                     },
-                    icon: Icon(Icons.send),
+                    icon: Icon(Icons.send, color: Colors.white70),
                   ),
                 ),
               ],

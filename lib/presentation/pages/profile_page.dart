@@ -1,12 +1,28 @@
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
+import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
+import 'package:firebase_auth_1/presentation/widgets/alert_widget.dart';
+import 'package:firebase_auth_1/presentation/widgets/switch_widget.dart';
+import 'package:firebase_auth_1/presentation/widgets/user_profile_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth_1/data/services/firebase_methods.dart';
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/delete_acc_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final bool mute = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,157 +30,151 @@ class ProfilePage extends StatelessWidget {
       FirebaseMethods().currentUser!.uid,
     );
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(double.infinity, 80),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 30.0, top: 20),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Profile',
-              style: TextStyle(fontSize: 26, color: Colors.white),
-            ),
+      appBar: AppBar(
+        toolbarHeight: 80,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Profile',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: Colors.white),
           ),
         ),
       ),
-      body: StreamBuilder(
-        stream: userDetails,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-          final user = snapshot.data;
-          final date = user!.createdAt;
-          String day = date.day.toString();
-          String month = date.month.toString();
-          String year = date.year.toString();
-          return Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                Card(
-                  color: Colors.blueGrey,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.white),
-                    borderRadius: BorderRadiusGeometry.circular(20),
-                  ),
-                  child: SizedBox(
-                    height: 400,
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 80,
-                            backgroundColor: const Color.fromARGB(
-                              79,
-                              163,
-                              204,
-                              226,
+      body: SingleChildScrollView(
+        child: StreamBuilder(
+          stream: userDetails,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(child: CircularProgressIndicator());
+            }
+            final user = snapshot.data;
+
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  UserProfileWidget(user: user!),
+                  SizedBox(height: 10),
+                  Card(
+                    child: SizedBox(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          children: [
+                            SwitchWidget(
+                              text: 'Dark theme',
+                              onChanged: () {
+                                context.read<SettingsProvider>().toggleDark(
+                                  !context.read<SettingsProvider>().dark,
+                                );
+                              },
+                              value: context.read<SettingsProvider>().dark,
                             ),
-                            backgroundImage: user.profilePic.isNotEmpty
-                                ? NetworkImage(user.profilePic)
-                                : null,
-                            child: (user.profilePic.isEmpty)
-                                ? Icon(
-                                    Icons.person,
-                                    size: 30,
-                                    color: Colors.grey.shade700,
-                                  )
-                                : null,
-                          ),
-                          SizedBox(height: 20),
-                          Expanded(
-                            child: Container(
+                            // SwitchWidget(
+                            //   text: 'Mute notifications',
+                            //   onChanged: () {
+                            //     setState(() {
+                            //       mute = !mute;
+                            //     });
+                            //   },
+                            //   value: mute,
+                            // ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Card(
+                    child: SizedBox(
+                      height: 160,
+                      width: double.infinity,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
+                                color: Colors.grey,
                                 borderRadius: BorderRadius.circular(20),
-                                border: BoxBorder.all(color: Colors.white),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'name : ${user.name}',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    Text(
-                                      'email : ${user.email}',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    Text(
-                                      'created at : $day/$month/$year',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
+                              child: TextButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertWidget(
+                                        title: 'Log Out',
+                                        content:
+                                            'Are you sure you want to log out?',
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          context.read<AuthBloc>().add(
+                                            LogOutButtonClickedEvent(),
+                                          );
+                                          context
+                                              .read<SettingsProvider>()
+                                              .setPageIndex(0);
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                                child: Text(
+                                  'Log Out',
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                Card(
-                  color: Colors.blueGrey,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.white),
-                    borderRadius: BorderRadiusGeometry.circular(20),
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              context.read<AuthBloc>().add(
-                                LogOutButtonClickedEvent(),
-                              );
-                            },
-                            child: Text(
-                              'Log Out',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => DeleteAccPage(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Delete Account',
-                                style: TextStyle(color: Colors.white),
+                            SizedBox(height: 5),
+                            Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertWidget(
+                                        title: 'Delete Account',
+                                        content:
+                                            'Are you sure you want to delete your account?',
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  DeleteAccPage(),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                                child: Text(
+                                  'Delete Account',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

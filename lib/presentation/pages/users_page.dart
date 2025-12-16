@@ -1,6 +1,6 @@
+import 'package:firebase_auth_1/core/utils/user_options.dart';
 import 'package:firebase_auth_1/data/services/firebase_methods.dart';
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
-import 'package:firebase_auth_1/presentation/pages/chat_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -11,16 +11,15 @@ class UsersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(double.infinity, 100),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 30.0, top: 20),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Users',
-              style: TextStyle(fontSize: 26, color: Colors.white),
-            ),
+      appBar: AppBar(
+        toolbarHeight: 80,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Users',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: Colors.white),
           ),
         ),
       ),
@@ -31,7 +30,12 @@ class UsersPage extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.data!.isEmpty) {
-            return Center(child: Text('No Users yet'));
+            return Center(
+              child: Text(
+                'No Users yet',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            );
           }
           final users = snapshot.data!;
           return Padding(
@@ -45,11 +49,7 @@ class UsersPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 2.0),
                   child: GestureDetector(
                     onTap: () async {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ChatPage(secondUser: user),
-                        ),
-                      );
+                      showUserOptions(context, user);
                     },
                     child: UserCardWidget(user: user),
                   ),

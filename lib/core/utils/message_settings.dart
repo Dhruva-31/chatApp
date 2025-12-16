@@ -1,4 +1,5 @@
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/presentation/widgets/alert_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/option_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -12,10 +13,6 @@ void showMessageSettings(
 ) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.blueGrey,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (context) =>
         messageSettings(context, roomId, messageId, uid1, uid2, senderId),
   );
@@ -50,12 +47,24 @@ Widget messageSettings(
           icon: Icons.delete,
           label: "Delete for you",
           onTap: () {
-            FirestoreMethods().deleteMessage(
-              roomId: roomId,
-              messageId: messageId,
-              deleteForUser: uid1,
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertWidget(
+                  title: 'Delete Message',
+                  content: 'Are you sure you want to delete this message?',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    FirestoreMethods().deleteMessage(
+                      roomId: roomId,
+                      messageId: messageId,
+                      deleteForUser: uid1,
+                    );
+                    Navigator.pop(context);
+                  },
+                );
+              },
             );
-            Navigator.pop(context);
           },
         ),
 
@@ -64,11 +73,23 @@ Widget messageSettings(
             icon: Icons.delete_forever,
             label: "Delete for everyone",
             onTap: () {
-              FirestoreMethods().deleteMessage(
-                roomId: roomId,
-                messageId: messageId,
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertWidget(
+                    title: 'Delete Message',
+                    content: 'Are you sure you want to delete this message?',
+                    onPressed: () {
+                      Navigator.pop(context);
+                      FirestoreMethods().deleteMessage(
+                        roomId: roomId,
+                        messageId: messageId,
+                      );
+                      Navigator.pop(context);
+                    },
+                  );
+                },
               );
-              Navigator.pop(context);
             },
           ),
         OptionWidget(

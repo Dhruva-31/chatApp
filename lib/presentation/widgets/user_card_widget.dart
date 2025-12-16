@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth_1/data/model/chatroom_model.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
 import 'package:firebase_auth_1/data/services/firebase_methods.dart';
@@ -7,50 +8,51 @@ class UserCardWidget extends StatelessWidget {
   final UserModel user;
   final ChatRoomModel? chatroom;
 
-  UserCardWidget({super.key, required this.user, this.chatroom});
+  const UserCardWidget({super.key, required this.user, this.chatroom});
 
   String shrink(String text, int max) {
     if (text.length <= max) return text;
     return "${text.substring(0, max)}...";
   }
 
-  final myId = FirebaseMethods().currentUser!.uid;
-
   @override
   Widget build(BuildContext context) {
+    final myId = FirebaseMethods().currentUser!.uid;
     final Map<String, dynamic> messageDetails =
         chatroom?.lastMessageFor[myId] ?? {"text": "", "at": 0};
     final String text = messageDetails["text"] ?? "";
     final int at = messageDetails["at"] ?? 0;
     final DateTime time = DateTime.fromMillisecondsSinceEpoch(at);
+    final int count = chatroom?.unseenCount[myId] ?? 0;
     return Card(
-      elevation: 3,
-      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         height: chatroom != null ? 80 : 60,
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.grey.shade300,
-              backgroundImage: user.profilePic.isNotEmpty
-                  ? NetworkImage(user.profilePic)
-                  : null,
-              child: user.profilePic.isEmpty
-                  ? Icon(Icons.person, size: 28, color: Colors.grey.shade700)
-                  : null,
+            CachedNetworkImage(
+              imageUrl: user.profilePic,
+              placeholder: (context, url) =>
+                  CircleAvatar(radius: 25, child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) => CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.grey.shade300,
+                child: Icon(
+                  Icons.person,
+                  size: 28,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              imageBuilder: (context, imageProvider) =>
+                  CircleAvatar(radius: 25, backgroundImage: imageProvider),
             ),
             SizedBox(width: 15),
             Expanded(
               child: chatroom == null
                   ? Text(
                       user.name,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -58,30 +60,70 @@ class UserCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           user.name,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         SizedBox(height: 4),
-                        text.isNotEmpty
+                        user.typingTo == myId
                             ? Text(
-                                user.typingTo.isEmpty
-                                    ? shrink(messageDetails['text'], 25)
-                                    : 'typing...',
-                                style: TextStyle(color: Colors.grey[700]),
+                                'typing...',
+                                style: Theme.of(context).textTheme.bodyMedium!
+                                    .copyWith(
+                                      color: Colors.green,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                              )
+                            : text.isNotEmpty
+                            ? Text(
+                                text,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               )
                             : const SizedBox.shrink(),
                       ],
                     ),
             ),
-            if (chatroom != null)
-              Text(
-                "${time.hour.toString().padLeft(2, '0')}:"
-                "${time.minute.toString().padLeft(2, '0')}",
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            if (chatroom != null) ...[
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  if (count > 0)
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$count',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                  Text(
+                    "${time.hour.toString().padLeft(2, '0')}:"
+                    "${time.minute.toString().padLeft(2, '0')}",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
+            ] else ...[
+              Text(
+                user.isOnline
+                    ? 'online'
+                    : 'last seen at ${user.lastSeen.hour.toString().padLeft(2, '0')}:${user.lastSeen.minute.toString().padLeft(2, '0')}',
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: user.isOnline
+                      ? const Color.fromARGB(255, 5, 253, 13)
+                      : Colors.white70,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ],
         ),
       ),

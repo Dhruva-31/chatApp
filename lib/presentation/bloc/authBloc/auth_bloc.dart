@@ -24,6 +24,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<GitHubSignInButtonClickedEvent>(gitHubSignInButtonClickedEvent);
     on<ResetButtonClickedEvent>(resetButtonClickedEvent);
     on<ProceedButtonClickedEvent>(proceedButtonClickedEvent);
+    on<DeleteAccountButtonClickedEvent>(deleteAccountButtonClickedEvent);
   }
 
   Future<void> signInButtonClickedEvent(
@@ -73,7 +74,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
-      emit(AuthInitial());
+      emit(AuthSignUpSuccessState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
     }
@@ -112,7 +113,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     {
       emit(AuthLoadingState());
       try {
-        if (event.name == "") {
+        if (event.name.trim().isEmpty) {
           emit(AuthFailureState(errorMessage: 'Name cannot be empty'));
           return;
         }
@@ -121,6 +122,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       } catch (e) {
         emit(AuthFailureState(errorMessage: e.toString()));
       }
+    }
+  }
+
+  FutureOr<void> deleteAccountButtonClickedEvent(
+    DeleteAccountButtonClickedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoadingState());
+    try {
+      if (event.provider == 'password') {
+        if (event.password != null && event.password!.isNotEmpty) {
+          await FirebaseMethods().deletePasswordUser(event.password!);
+        } else {
+          throw 'password cannot be null';
+        }
+      } else if (event.provider == 'google.com') {
+        await FirebaseMethods().deleteGoogleUser();
+      } else if (event.provider == 'github.com') {
+        await FirebaseMethods().deleteGithubUser();
+      }
+      emit(AccountDeletedState());
+    } catch (e) {
+      emit(AuthFailureState(errorMessage: e.toString()));
     }
   }
 }

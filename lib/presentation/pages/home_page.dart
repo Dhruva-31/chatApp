@@ -14,16 +14,15 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(double.infinity, 100),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 30.0, top: 20),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Chats',
-              style: TextStyle(fontSize: 26, color: Colors.white),
-            ),
+      appBar: AppBar(
+        toolbarHeight: 80,
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Chats',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge!.copyWith(color: Colors.white),
           ),
         ),
       ),
@@ -34,7 +33,12 @@ class HomePage extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.data!.isEmpty) {
-            return Center(child: Text('No chats yet'));
+            return Center(
+              child: Text(
+                'No chats yet',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            );
           }
           final chatRooms = snapshot.data!;
           return Padding(

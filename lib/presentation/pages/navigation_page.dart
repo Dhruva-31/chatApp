@@ -1,31 +1,25 @@
 import 'package:firebase_auth_1/presentation/pages/users_page.dart';
 import 'package:firebase_auth_1/presentation/pages/profile_page.dart';
 import 'package:firebase_auth_1/presentation/pages/home_page.dart';
+import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class InitialPage extends StatefulWidget {
-  const InitialPage({super.key});
+class NavigationPage extends StatelessWidget {
+  NavigationPage({super.key});
 
-  @override
-  State<InitialPage> createState() => _InitialPageState();
-}
-
-class _InitialPageState extends State<InitialPage> {
   final List<Widget> pages = [HomePage(), UsersPage(), ProfilePage()];
-  int pageIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    int pageIndex = context.watch<SettingsProvider>().pageIndex;
     return Scaffold(
       body: pages[pageIndex],
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.white,
-        currentIndex: pageIndex,
+        currentIndex: context.read<SettingsProvider>().pageIndex,
         onTap: (value) {
-          setState(() {
-            pageIndex = value;
-          });
+          context.read<SettingsProvider>().setPageIndex(value);
         },
         items: [
           BottomNavigationBarItem(

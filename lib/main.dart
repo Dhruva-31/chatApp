@@ -1,21 +1,31 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_auth_1/core/utils/app_lifecycle_manager.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
-import 'package:firebase_auth_1/presentation/pages/auth_pages/user_details_page.dart';
-import 'package:firebase_auth_1/presentation/pages/initial_page.dart';
-import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
-import 'package:firebase_auth_1/presentation/pages/auth_pages/login_page.dart';
-import 'package:flutter/material.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth_1/core/theme/dark_theme.dart';
+import 'package:firebase_auth_1/core/theme/light_theme.dart';
+import 'package:firebase_auth_1/core/utils/app_lifecycle_manager.dart';
+import 'package:firebase_auth_1/data/services/sharedPreferences_methods.dart';
+import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
+import 'package:firebase_auth_1/presentation/pages/splash_page.dart';
+import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await SharedPreferencesMethods.init();
   AppLifecycleManager().initialize();
-  runApp(MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        BlocProvider(create: (_) => AuthBloc()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -23,68 +33,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [BlocProvider(create: (context) => AuthBloc())],
+    final bool dark = context.watch<SettingsProvider>().dark;
+
+    return AnimatedTheme(
+      data: dark ? buildDarkTheme() : buildLightTheme(),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       child: MaterialApp(
         title: 'Flutter Demo',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.blueGrey,
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.blueGrey,
-            iconTheme: IconThemeData(color: Colors.white),
-          ),
-          bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            backgroundColor: Colors.blueGrey,
-          ),
-        ),
-
-        home: StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, authSnap) {
-            if (authSnap.connectionState == ConnectionState.waiting) {
-              return Scaffold(body: Center(child: CircularProgressIndicator()));
-            }
-
-            if (!authSnap.hasData) {
-              return LogInPage();
-            }
-
-            final uid = authSnap.data!.uid;
-
-            return StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(uid)
-                  .snapshots(),
-              builder: (context, userSnap) {
-                if (userSnap.connectionState == ConnectionState.waiting) {
-                  return Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (!userSnap.hasData || !userSnap.data!.exists) {
-                  return LogInPage();
-                }
-
-                final data = userSnap.data!.data() as Map<String, dynamic>?;
-
-                if (data == null) {
-                  return LogInPage();
-                }
-
-                final name = data["name"] as String?;
-
-                if (name == null || name.isEmpty) {
-                  return UserDetailsPage();
-                }
-                final uid = FirebaseMethods().currentUser!.uid;
-                FirestoreMethods().updateUserOnLogin(uid);
-                return InitialPage();
-              },
-            );
-          },
-        ),
+        themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+        theme: buildLightTheme(),
+        darkTheme: buildDarkTheme(),
+        home: const SplashPage(),
       ),
     );
   }

@@ -5,6 +5,7 @@ class ChatRoomModel {
   final Map<String, int?> deletedAt;
   final Map<String, int?> lastDeletedAt;
   final int lastMessageAt;
+  final Map<String, int> unseenCount;
 
   ChatRoomModel({
     required this.roomId,
@@ -13,6 +14,7 @@ class ChatRoomModel {
     required this.deletedAt,
     required this.lastDeletedAt,
     required this.lastMessageAt,
+    required this.unseenCount,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +25,7 @@ class ChatRoomModel {
       'deletedAt': deletedAt,
       'lastDeletedAt': lastDeletedAt,
       'lastMessageAt': lastMessageAt,
+      'unseenCount': unseenCount,
     };
   }
 
@@ -32,8 +35,9 @@ class ChatRoomModel {
       participants: List<String>.from(map['participants']),
       lastMessageAt: map['lastMessageAt'] ?? 0,
       lastMessageFor: Map<String, dynamic>.from(map['lastMessageFor'] ?? {}),
-      deletedAt: Map<String, int?>.from(map["deletedAt"] ?? {}),
-      lastDeletedAt: Map<String, int?>.from(map["lastDeletedAt"] ?? {}),
+      deletedAt: Map<String, int?>.from(map['deletedAt'] ?? {}),
+      lastDeletedAt: Map<String, int?>.from(map['lastDeletedAt'] ?? {}),
+      unseenCount: Map<String, int>.from(map['unseenCount'] ?? {}),
     );
   }
 }

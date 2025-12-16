@@ -11,7 +11,6 @@ class FirestoreMethods {
   Future<void> saveUserToFirestore(UserModel user) async {
     try {
       await _instance.collection("users").doc(user.uid).set(user.toMap());
-      updateUserOnLogin(user.uid);
     } catch (e) {
       rethrow;
     }
@@ -39,9 +38,7 @@ class FirestoreMethods {
   Future<void> updateUserFcmToken(String token) async {
     try {
       final myId = FirebaseMethods().currentUser!.uid;
-      await _instance.collection('users').doc(myId).update({
-        'fcmToken ': token,
-      });
+      await _instance.collection('users').doc(myId).update({'fcmToken': token});
     } catch (e) {
       rethrow;
     }
@@ -70,9 +67,12 @@ class FirestoreMethods {
   Future<void> updateUserTyping(String secondId) async {
     try {
       final uid = FirebaseMethods().currentUser!.uid;
-      await _instance.collection('users').doc(uid).update({
-        "typingTo": secondId,
-      });
+      final doc = await _instance.collection('users').doc(uid).get();
+      if (doc['typingTo'] != secondId) {
+        await _instance.collection('users').doc(uid).update({
+          "typingTo": secondId,
+        });
+      }
     } catch (e) {
       rethrow;
     }
@@ -130,7 +130,7 @@ class FirestoreMethods {
     }
   }
 
-  String generateRoomId(uid1, uid2) {
+  String generateRoomId(String uid1, String uid2) {
     return (uid1.compareTo(uid2) < 0) ? "${uid1}_$uid2" : "${uid2}_$uid1";
   }
 
@@ -148,6 +148,7 @@ class FirestoreMethods {
           lastDeletedAt: {uid1: null, uid2: null},
           lastMessageFor: {},
           lastMessageAt: DateTime.now().microsecondsSinceEpoch,
+          unseenCount: {uid1: 0, uid2: 0},
         );
         await docRef.set(room.toMap());
       }
@@ -167,7 +168,10 @@ class FirestoreMethods {
           .map(
             (snapshot) => snapshot.docs
                 .map((doc) => ChatRoomModel.fromMap(doc.data()))
-                .where((room) => room.deletedAt[uid] == null)
+                .where(
+                  (room) =>
+                      room.deletedAt[uid] == null && room.lastMessageAt != 0,
+                )
                 .toList(),
           );
     } catch (e) {
@@ -175,14 +179,18 @@ class FirestoreMethods {
     }
   }
 
-  Future<void> deleteChatForUser(String roomId, String uid) async {
+  Future<void> clearChatForUser(String roomId, String uid) async {
     final docRef = _instance.collection("chatrooms").doc(roomId);
     final snap = await docRef.get();
     if (!snap.exists) return;
 
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await docRef.update({"deletedAt.$uid": now, "lastDeletedAt.$uid": now});
+    await docRef.update({
+      "deletedAt.$uid": now,
+      "lastDeletedAt.$uid": now,
+      'unseenCount.$uid': 0,
+    });
   }
 
   Future<void> sendMessage({
@@ -218,6 +226,8 @@ class FirestoreMethods {
           "by": uid1,
           "at": now.millisecondsSinceEpoch,
         },
+        'unseenCount.$uid1': 0,
+        'unseenCount.$uid2': FieldValue.increment(1),
         'deletedAt.$uid1': null,
         'deletedAt.$uid2': null,
         'lastMessageAt': DateTime.now().microsecondsSinceEpoch,
@@ -275,6 +285,12 @@ class FirestoreMethods {
                 !m.deletedFor.contains(uid),
           )
           .toList();
+    });
+  }
+
+  Future<void> resetUnseenCount(String roomId, String uid) async {
+    await _instance.collection("chatrooms").doc(roomId).update({
+      "unseenCount.$uid": 0,
     });
   }
 

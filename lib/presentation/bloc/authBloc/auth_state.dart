@@ -17,8 +17,10 @@ final class AuthFailureState extends AuthState {
 
 final class AuthShowSignUpPageState extends AuthState {}
 
-final class AuthShowPhoneSignInPage extends AuthState {}
-
 final class AuthShowForgotPasswordPage extends AuthState {}
 
 final class AuthFinishedState extends AuthState {}
+
+final class AuthSignUpSuccessState extends AuthState {}
+
+final class AccountDeletedState extends AuthState {}

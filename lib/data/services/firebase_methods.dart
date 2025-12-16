@@ -12,7 +12,22 @@ class FirebaseMethods {
     required String password,
   }) async {
     try {
-      final userCredential = await auth.createUserWithEmailAndPassword(
+      await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  //EMAIL SIGN IN
+  Future<void> emailSignIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final userCredential = await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -32,36 +47,8 @@ class FirebaseMethods {
         );
         FirestoreMethods().saveUserToFirestore(user);
       }
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  //EMAIL SIGN IN
-  Future<void> emailSignIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final userCredential = await auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      final uid =         userCredential.user!.uid;
-      await         FirestoreMethods().updateUserOnLogin(userCredential.user!.uid);
-      } else {
-        UserModel user = UserModel(
-          uid: userCredential.user!.uid,
-          name: '',
-          email: email,
-          profilePic: "",
-          isOnline: true,
-          fcmToken: "",
-          lastSeen: DateTime.now(),
-          createdAt: DateTime.now(),
-        );
-        FirestoreMethods().saveUserToFirestore(user);
-      }
+      final uid = userCredential.user!.uid;
+      await FirestoreMethods().updateUserOnLogin(uid);
     } on FirebaseAuthException {
       rethrow;
     }
@@ -120,7 +107,7 @@ class FirebaseMethods {
         userCredential.user!.uid,
       );
       if (exists) {
-        FirestoreMethods().updateUserOnLogin(userCredential.user!.uid);
+        await FirestoreMethods().updateUserOnLogin(userCredential.user!.uid);
       } else {
         UserModel user = UserModel(
           uid: userCredential.user!.uid,
@@ -131,8 +118,9 @@ class FirebaseMethods {
           fcmToken: "",
           lastSeen: DateTime.now(),
           createdAt: DateTime.now(),
+          typingTo: '',
         );
-        FirestoreMethods().saveUserToFirestore(user);
+        await FirestoreMethods().saveUserToFirestore(user);
       }
     } catch (e) {
       rethrow;

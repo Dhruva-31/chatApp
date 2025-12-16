@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'auth_bloc.dart';
 
 @immutable
@@ -37,4 +38,10 @@ class ProceedButtonClickedEvent extends AuthEvent {
   final String name;
 
   ProceedButtonClickedEvent({required this.name});
+}
+
+class DeleteAccountButtonClickedEvent extends AuthEvent {
+  final String provider;
+  final String? password;
+  DeleteAccountButtonClickedEvent({required this.provider, this.password});
 }
