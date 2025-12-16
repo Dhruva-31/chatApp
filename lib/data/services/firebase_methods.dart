@@ -47,12 +47,8 @@ class FirebaseMethods {
         email: email,
         password: password,
       );
-      await auth.currentUser!.sendEmailVerification();
-      bool exists = await FirestoreMethods().userExists(
-        userCredential.user!.uid,
-      );
-      if (exists) {
-        FirestoreMethods().updateUserOnLogin(userCredential.user!.uid);
+      final uid =         userCredential.user!.uid;
+      await         FirestoreMethods().updateUserOnLogin(userCredential.user!.uid);
       } else {
         UserModel user = UserModel(
           uid: userCredential.user!.uid,
