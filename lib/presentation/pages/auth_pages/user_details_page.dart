@@ -1,12 +1,21 @@
-import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
-import 'package:firebase_auth_1/presentation/pages/navigation_page.dart';
-import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
+import 'package:firebase_auth_1/presentation/pages/navigation_page.dart';
+import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
+
 class UserDetailsPage extends StatelessWidget {
-  UserDetailsPage({super.key});
+  final FirestoreMethods firestoreMethods;
+  final String myId;
+  UserDetailsPage({
+    super.key,
+    required this.firestoreMethods,
+    required this.myId,
+  });
   final TextEditingController nameController = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -20,7 +29,12 @@ class UserDetailsPage extends StatelessWidget {
           } else if (state is AuthFinishedState) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => NavigationPage()),
+              MaterialPageRoute(
+                builder: (context) => NavigationPage(
+                  firestoreMethods: firestoreMethods,
+                  myId: myId,
+                ),
+              ),
               (route) => false,
             );
           }

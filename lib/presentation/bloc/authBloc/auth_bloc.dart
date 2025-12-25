@@ -1,15 +1,17 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:flutter/material.dart';
+
+import 'package:firebase_auth_1/data/repository/auth_repo.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(AuthInitial()) {
+  final AuthRepo authRepo;
+  AuthBloc(this.authRepo) : super(AuthInitial()) {
     on<AuthEvent>((event, emit) {});
     on<SignInButtonClickedEvent>(signInButtonClickedEvent);
     on<HomeSignUpButtonClickedEvent>((event, emit) {
@@ -33,10 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      await FirebaseMethods().emailSignIn(
-        email: event.email,
-        password: event.password,
-      );
+      await authRepo.emailSignIn(email: event.email, password: event.password);
       emit(AuthSuccessState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
@@ -49,7 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      await FirebaseMethods().googleSignIn();
+      await authRepo.googleSignIn();
       emit(AuthSuccessState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
@@ -59,9 +58,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   FutureOr<void> logOutButtonClickedEvent(
     LogOutButtonClickedEvent event,
     Emitter<AuthState> emit,
-  ) {
-    FirebaseMethods().logOut();
-    emit(AuthInitial());
+  ) async {
+    emit(AuthLoadingState());
+    try {
+      await authRepo.logOut();
+      emit(AuthInitial());
+    } catch (e) {
+      emit(AuthFailureState(errorMessage: e.toString()));
+    }
   }
 
   FutureOr<void> realSignUpButtonClickedEvent(
@@ -70,10 +74,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      await FirebaseMethods().emailSignUp(
-        email: event.email,
-        password: event.password,
-      );
+      await authRepo.emailSignUp(email: event.email, password: event.password);
       emit(AuthSignUpSuccessState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
@@ -86,7 +87,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      await FirebaseMethods().githubSignIn();
+      await authRepo.githubSignIn();
       emit(AuthSuccessState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
@@ -99,7 +100,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      await FirebaseMethods().passwordReset(email: event.email);
+      await authRepo.resetPassword(email: event.email);
       emit(AuthInitial());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));
@@ -113,11 +114,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     {
       emit(AuthLoadingState());
       try {
-        if (event.name.trim().isEmpty) {
-          emit(AuthFailureState(errorMessage: 'Name cannot be empty'));
-          return;
-        }
-        await FirestoreMethods().updateUserName(event.name);
+        await authRepo.saveName(name: event.name);
         emit(AuthFinishedState());
       } catch (e) {
         emit(AuthFailureState(errorMessage: e.toString()));
@@ -131,17 +128,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoadingState());
     try {
-      if (event.provider == 'password') {
-        if (event.password != null && event.password!.isNotEmpty) {
-          await FirebaseMethods().deletePasswordUser(event.password!);
-        } else {
-          throw 'password cannot be null';
-        }
-      } else if (event.provider == 'google.com') {
-        await FirebaseMethods().deleteGoogleUser();
-      } else if (event.provider == 'github.com') {
-        await FirebaseMethods().deleteGithubUser();
-      }
+      await authRepo.deleteAcc(
+        password: event.password,
+        provider: event.provider,
+      );
       emit(AccountDeletedState());
     } catch (e) {
       emit(AuthFailureState(errorMessage: e.toString()));

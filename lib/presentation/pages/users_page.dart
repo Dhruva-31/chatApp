@@ -1,13 +1,19 @@
-import 'package:firebase_auth_1/core/utils/user_options.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
-import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 
-class UsersPage extends StatelessWidget {
-  UsersPage({super.key});
+import 'package:firebase_auth_1/core/utils/user_options.dart';
+import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
 
-  final _uid = FirebaseMethods().currentUser!.uid;
+class UsersPage extends StatelessWidget {
+  final FirestoreMethods firestoreMethods;
+  final String myId;
+  const UsersPage({
+    super.key,
+    required this.firestoreMethods,
+    required this.myId,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,10 +30,10 @@ class UsersPage extends StatelessWidget {
         ),
       ),
       body: StreamBuilder(
-        stream: FirestoreMethods().getUsers(_uid),
+        stream: firestoreMethods.getUsers(myId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.data!.isEmpty) {
             return Center(
@@ -48,10 +54,10 @@ class UsersPage extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2.0),
                   child: GestureDetector(
-                    onTap: () async {
-                      showUserOptions(context, user);
+                    onTap: () {
+                      showUserOptions(context, user, myId);
                     },
-                    child: UserCardWidget(user: user),
+                    child: UserCardWidget(myId: user.uid, user: user),
                   ),
                 );
               },

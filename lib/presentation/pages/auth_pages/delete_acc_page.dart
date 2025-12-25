@@ -1,9 +1,11 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:firebase_auth_1/data/services/firebase_methods.dart';
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/login_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DeleteAccPage extends StatefulWidget {
   const DeleteAccPage({super.key});
@@ -35,7 +37,7 @@ class _DeleteAccPageState extends State<DeleteAccPage> {
           } else if (state is AccountDeletedState) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => LogInPage()),
+              MaterialPageRoute(builder: (context) => const LogInPage()),
               (route) => false,
             );
           }
@@ -84,45 +86,6 @@ class _DeleteAccPageState extends State<DeleteAccPage> {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                 ),
-
-                // if (provider == "google.com") ...[
-                //   Center(
-                //     child: ElevatedButton(
-                //       onPressed: () {
-                //         context.read<AuthBloc>().add(
-                //           DeleteAccountButtonClickedEvent(provider: 'google.com'),
-                //         );
-                //       },
-                //       style: ElevatedButton.styleFrom(
-                //         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                //         backgroundColor: Colors.red,
-                //       ),
-                //       child: Text(
-                //         "Delete Account (Google)",
-                //         style: Theme.of(context).textTheme.bodyLarge,
-                //       ),
-                //     ),
-                //   ),
-                // ],
-
-                // if (provider == "github.com") ...[
-                //   Center(
-                //     child: ElevatedButton(
-                //       onPressed: () async {
-                //         await FirebaseMethods().deleteGithubUser();
-                //         if (mounted) Navigator.pop(context);
-                //       },
-                //       style: ElevatedButton.styleFrom(
-                //         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                //         backgroundColor: Colors.red,
-                //       ),
-                //       child: Text(
-                //         "Delete Account (GitHub)",
-                //         style: Theme.of(context).textTheme.bodyLarge,
-                //       ),
-                //     ),
-                //   ),
-                // ],
               ],
             ),
           );

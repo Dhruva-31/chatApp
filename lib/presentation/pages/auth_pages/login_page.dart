@@ -1,11 +1,13 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/email_signUp.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/forget_pass.dart';
 import 'package:firebase_auth_1/presentation/widgets/icon_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
@@ -15,7 +17,7 @@ class LogInPage extends StatefulWidget {
 }
 
 class _LogInPageState extends State<LogInPage> {
-  List<List<dynamic>> providers = [
+  late List<List<dynamic>> providers = [
     [FontAwesomeIcons.google, GoogleSignInButtonClickedEvent()],
     [FontAwesomeIcons.github, GitHubSignInButtonClickedEvent()],
   ];
@@ -33,9 +35,9 @@ class _LogInPageState extends State<LogInPage> {
               context,
             ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
           } else if (state is AuthShowSignUpPageState) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const EmailSignup()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (context) => EmailSignup()));
           } else if (state is AuthShowForgotPasswordPage) {
             Navigator.of(
               context,
@@ -239,7 +241,7 @@ class _LogInPageState extends State<LogInPage> {
                                       );
                                     },
                                     child: Text(
-                                      "Sign Up",
+                                      'Sign Up',
                                       style: TextStyle(
                                         color: Colors.yellow,
                                         fontSize: 16,

@@ -8,13 +8,13 @@ import 'package:flutter/material.dart';
 void showChatOptions(
   BuildContext context,
   String roomId,
-  String uid1,
+  String myId,
   String uid2,
 ) {
   showModalBottomSheet(
     context: context,
 
-    builder: (context) => chatSettings(context, roomId, uid1, uid2),
+    builder: (context) => chatSettings(context, roomId, myId, uid2),
   );
 }
 
@@ -49,7 +49,7 @@ Widget chatSettings(
             UserModel user = await FirestoreMethods().getUserDetail(uid2).first;
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => UserProfilePage(user: user),
+                builder: (context) => UserProfilePage(user: user, myId: uid1),
               ),
             );
           },

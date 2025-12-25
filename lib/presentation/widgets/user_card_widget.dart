@@ -1,23 +1,34 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+
 import 'package:firebase_auth_1/data/model/chatroom_model.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
-import 'package:flutter/material.dart';
 
 class UserCardWidget extends StatelessWidget {
   final UserModel user;
   final ChatRoomModel? chatroom;
+  final String myId;
 
-  const UserCardWidget({super.key, required this.user, this.chatroom});
+  const UserCardWidget({
+    super.key,
+    required this.user,
+    this.chatroom,
+    required this.myId,
+  });
 
   String shrink(String text, int max) {
     if (text.length <= max) return text;
     return "${text.substring(0, max)}...";
   }
 
+  bool checkDayChanged(int day) {
+    if (DateTime.now().day != user.lastSeen.day) return true;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final myId = FirebaseMethods().currentUser!.uid;
     final Map<String, dynamic> messageDetails =
         chatroom?.lastMessageFor[myId] ?? {"text": "", "at": 0};
     final String text = messageDetails["text"] ?? "";
@@ -53,6 +64,8 @@ class UserCardWidget extends StatelessWidget {
                   ? Text(
                       user.name,
                       style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -105,6 +118,7 @@ class UserCardWidget extends StatelessWidget {
                     ),
 
                   Text(
+                    key: Key('lastMessageTime'),
                     "${time.hour.toString().padLeft(2, '0')}:"
                     "${time.minute.toString().padLeft(2, '0')}",
                     style: Theme.of(context).textTheme.bodySmall,
@@ -115,7 +129,7 @@ class UserCardWidget extends StatelessWidget {
               Text(
                 user.isOnline
                     ? 'online'
-                    : 'last seen at ${user.lastSeen.hour.toString().padLeft(2, '0')}:${user.lastSeen.minute.toString().padLeft(2, '0')}',
+                    : '${user.lastSeen.hour.toString().padLeft(2, '0')}:${user.lastSeen.minute.toString().padLeft(2, '0')} ${checkDayChanged(user.lastSeen.day) ? 'on ${user.lastSeen.day}' : 'today'}',
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                   color: user.isOnline
                       ? const Color.fromARGB(255, 5, 253, 13)

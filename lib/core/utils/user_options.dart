@@ -1,17 +1,19 @@
+import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:flutter/material.dart';
+
 import 'package:firebase_auth_1/data/model/user_model.dart';
 import 'package:firebase_auth_1/presentation/pages/UserProfilePage.dart';
 import 'package:firebase_auth_1/presentation/pages/chat_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/option_widget.dart';
-import 'package:flutter/material.dart';
 
-void showUserOptions(BuildContext context, UserModel user) {
+void showUserOptions(BuildContext context, UserModel user, String myId) {
   showModalBottomSheet(
     context: context,
-    builder: (context) => userOptions(context, user),
+    builder: (context) => userOptions(context, user, myId),
   );
 }
 
-Widget userOptions(BuildContext context, UserModel user) {
+Widget userOptions(BuildContext context, UserModel user, String myId) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
     child: Column(
@@ -36,7 +38,7 @@ Widget userOptions(BuildContext context, UserModel user) {
             Navigator.pop(context);
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => UserProfilePage(user: user),
+                builder: (context) => UserProfilePage(user: user, myId: myId),
               ),
             );
           },
@@ -48,7 +50,11 @@ Widget userOptions(BuildContext context, UserModel user) {
             Navigator.pop(context);
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ChatPage(secondUser: user),
+                builder: (context) => ChatPage(
+                  secondUser: user,
+                  myId: myId,
+                  firestoreMethods: FirestoreMethods(),
+                ),
               ),
             );
           },

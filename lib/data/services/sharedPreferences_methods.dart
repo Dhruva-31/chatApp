@@ -7,8 +7,6 @@ class SharedPreferencesMethods {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // ====== SAVE ======
-
   static Future<void> saveBool(String key, bool value) async {
     await _prefs.setBool(key, value);
   }
@@ -21,8 +19,6 @@ class SharedPreferencesMethods {
     await _prefs.setInt(key, value);
   }
 
-  // ====== GET (SYNC) ======
-
   static bool? getBool(String key) {
     return _prefs.getBool(key);
   }
@@ -34,8 +30,6 @@ class SharedPreferencesMethods {
   static int? getInt(String key) {
     return _prefs.getInt(key);
   }
-
-  // ====== REMOVE ======
 
   static Future<void> remove(String key) async {
     await _prefs.remove(key);

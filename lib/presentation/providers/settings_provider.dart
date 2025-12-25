@@ -20,6 +20,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void setPageIndex(int index) {
+    if (_pageIndex == index) return;
     _pageIndex = index;
     notifyListeners();
   }

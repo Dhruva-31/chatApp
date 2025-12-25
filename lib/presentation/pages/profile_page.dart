@@ -1,34 +1,45 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
+import 'package:firebase_auth_1/presentation/pages/auth_pages/delete_acc_page.dart';
 import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
 import 'package:firebase_auth_1/presentation/widgets/alert_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/switch_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_profile_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
-import 'package:firebase_auth_1/presentation/pages/auth_pages/delete_acc_page.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final FirestoreMethods firestoreMethods;
+  final String myId;
+
+  const ProfilePage({
+    super.key,
+    required this.firestoreMethods,
+    required this.myId,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final bool mute = false;
+  late final Stream _userStream;
+  dynamic _cachedUser;
 
   @override
   void initState() {
     super.initState();
+    _userStream = widget.firestoreMethods.getUserDetail(widget.myId);
   }
 
   @override
   Widget build(BuildContext context) {
-    final userDetails = FirestoreMethods().getUserDetail(
-      FirebaseMethods().currentUser!.uid,
+    final bool dark = context.select<SettingsProvider, bool>(
+      (provider) => provider.dark,
     );
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80,
@@ -44,45 +55,38 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: SingleChildScrollView(
         child: StreamBuilder(
-          stream: userDetails,
+          stream: _userStream,
           builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
+            if (snapshot.hasData) {
+              _cachedUser = snapshot.data;
             }
-            final user = snapshot.data;
+
+            if (_cachedUser == null) {
+              return SizedBox.shrink();
+            }
+            final user = _cachedUser;
 
             return Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  UserProfileWidget(user: user!),
+                  UserProfileWidget(user: user, myId: widget.myId),
                   SizedBox(height: 10),
                   Card(
-                    child: SizedBox(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          children: [
-                            SwitchWidget(
-                              text: 'Dark theme',
-                              onChanged: () {
-                                context.read<SettingsProvider>().toggleDark(
-                                  !context.read<SettingsProvider>().dark,
-                                );
-                              },
-                              value: context.read<SettingsProvider>().dark,
-                            ),
-                            // SwitchWidget(
-                            //   text: 'Mute notifications',
-                            //   onChanged: () {
-                            //     setState(() {
-                            //       mute = !mute;
-                            //     });
-                            //   },
-                            //   value: mute,
-                            // ),
-                          ],
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          SwitchWidget(
+                            text: 'Dark theme',
+                            onChanged: () {
+                              context.read<SettingsProvider>().toggleDark(
+                                !dark,
+                              );
+                            },
+                            value: dark,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -151,7 +155,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           Navigator.of(context).push(
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  DeleteAccPage(),
+                                                  const DeleteAccPage(),
                                             ),
                                           );
                                         },

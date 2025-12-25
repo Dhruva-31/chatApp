@@ -1,7 +1,9 @@
-import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
-import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
+import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
 
 class ForgetPassPage extends StatelessWidget {
   ForgetPassPage({super.key});

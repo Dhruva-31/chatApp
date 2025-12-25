@@ -1,14 +1,15 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/presentation/widgets/edit_name_widget.dart';
-import 'package:flutter/material.dart';
 
 class UserProfileWidget extends StatelessWidget {
   final UserModel user;
-  const UserProfileWidget({super.key, required this.user});
+  final String myId;
+  const UserProfileWidget({super.key, required this.user, required this.myId});
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +29,8 @@ class UserProfileWidget extends StatelessWidget {
             children: [
               CachedNetworkImage(
                 imageUrl: user.profilePic,
-                placeholder: (context, url) => CircleAvatar(
-                  radius: 70,
-                  child: CircularProgressIndicator(),
-                ),
+                placeholder: (context, url) =>
+                    CircleAvatar(radius: 70, child: const SizedBox.shrink()),
                 errorWidget: (context, url, error) => CircleAvatar(
                   radius: 70,
                   backgroundColor: Colors.grey.shade300,
@@ -61,14 +60,16 @@ class UserProfileWidget extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
+                          key: Key('name'),
                           'name : ${user.name}',
                           style: Theme.of(context).textTheme.bodyLarge,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      user.uid == FirebaseMethods().currentUser!.uid
+                      user.uid == myId
                           ? GestureDetector(
+                              key: Key('edit button'),
                               onTap: () {
                                 showDialog(
                                   context: context,

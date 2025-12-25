@@ -1,15 +1,18 @@
-import 'package:firebase_auth_1/data/repository/firestore_repo.dart';
-import 'package:firebase_auth_1/data/services/firebase_methods.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+
 import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/presentation/pages/chat_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
-import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
-  HomePage({super.key});
-
-  final _firestoreRepo = FirestoreRepo();
-  final _uid = FirebaseMethods().currentUser!.uid;
+  final FirestoreMethods firestoreMethods;
+  final String myId;
+  const HomePage({
+    super.key,
+    required this.firestoreMethods,
+    required this.myId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +30,10 @@ class HomePage extends StatelessWidget {
         ),
       ),
       body: StreamBuilder(
-        stream: _firestoreRepo.chatRoomsData(_uid),
+        stream: firestoreMethods.getChatRooms(myId),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.data!.isEmpty) {
             return Center(
@@ -47,35 +50,37 @@ class HomePage extends StatelessWidget {
               itemCount: chatRooms.length,
               itemBuilder: (context, index) {
                 final chatRoom = chatRooms[index];
-                final secondUserId = _uid == chatRoom.participants[0]
+                final secondUserId = (myId == chatRoom.participants[0])
                     ? chatRoom.participants[1]
                     : chatRoom.participants[0];
                 return StreamBuilder(
-                  stream: FirestoreMethods().getUserDetail(secondUserId),
+                  stream: firestoreMethods.getUserDetail(secondUserId),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Card(
-                        child: Center(child: CircularProgressIndicator()),
+                    if (snapshot.hasData) {
+                      final toUserData = snapshot.data;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => ChatPage(
+                                  secondUser: toUserData,
+                                  myId: myId,
+                                  firestoreMethods: firestoreMethods,
+                                ),
+                              ),
+                            );
+                          },
+                          child: UserCardWidget(
+                            myId: myId,
+                            user: toUserData!,
+                            chatroom: chatRoom,
+                          ),
+                        ),
                       );
                     }
-                    final toUserData = snapshot.data;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ChatPage(secondUser: toUserData),
-                            ),
-                          );
-                        },
-                        child: UserCardWidget(
-                          user: toUserData!,
-                          chatroom: chatRoom,
-                        ),
-                      ),
-                    );
+                    return SizedBox.shrink();
                   },
                 );
               },

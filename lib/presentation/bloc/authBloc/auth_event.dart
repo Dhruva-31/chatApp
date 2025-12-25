@@ -2,7 +2,7 @@
 part of 'auth_bloc.dart';
 
 @immutable
-sealed class AuthEvent {}
+class AuthEvent {}
 
 class SignInButtonClickedEvent extends AuthEvent {
   final String email;
@@ -43,5 +43,6 @@ class ProceedButtonClickedEvent extends AuthEvent {
 class DeleteAccountButtonClickedEvent extends AuthEvent {
   final String provider;
   final String? password;
+
   DeleteAccountButtonClickedEvent({required this.provider, this.password});
 }
