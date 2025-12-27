@@ -1,20 +1,23 @@
 import 'package:firebase_auth_1/data/model/chatroom_model.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('HomePage test - ', () {
     const fakeUid = 'test-uid';
     testWidgets('when no chats', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: HomePage(
-            firestoreMethods: FakeFirestoreNoChats(),
-            myId: fakeUid,
-          ),
+        MultiProvider(
+          providers: [
+            Provider<ChatRepo>.value(value: FakeChatRepoWithNoChats()),
+            Provider<UserRepo>.value(value: FakeUserRepo()),
+          ],
+          child: MaterialApp(home: HomePage(myId: fakeUid)),
         ),
       );
 
@@ -31,11 +34,12 @@ void main() {
     testWidgets('When chats exists', (tester) async {
       const fakeUid = 'test-uid';
       await tester.pumpWidget(
-        MaterialApp(
-          home: HomePage(
-            firestoreMethods: FakeFirestoreWithChats(),
-            myId: fakeUid,
-          ),
+        MultiProvider(
+          providers: [
+            Provider<ChatRepo>.value(value: FakeChatRepoWithChats()),
+            Provider<UserRepo>.value(value: FakeUserRepo()),
+          ],
+          child: MaterialApp(home: HomePage(myId: fakeUid)),
         ),
       );
 
@@ -52,19 +56,19 @@ void main() {
   });
 }
 
-class FakeFirestoreNoChats extends Fake implements FirestoreMethods {
+class FakeChatRepoWithNoChats extends Fake implements ChatRepo {
   @override
   Stream<List<ChatRoomModel>> getChatRooms(String uid) {
     return Stream.value([]);
   }
 
   @override
-  Stream<UserModel> getUserDetail(String uid) {
-    return Stream.value(_fakeUser(uid));
+  String getOtherParticipantId(String myId, List<String> participants) {
+    return '1';
   }
 }
 
-class FakeFirestoreWithChats extends Fake implements FirestoreMethods {
+class FakeChatRepoWithChats extends Fake implements ChatRepo {
   @override
   Stream<List<ChatRoomModel>> getChatRooms(String uid) {
     return Stream.value([
@@ -80,6 +84,13 @@ class FakeFirestoreWithChats extends Fake implements FirestoreMethods {
     ]);
   }
 
+  @override
+  String getOtherParticipantId(String myId, List<String> participants) {
+    return '1';
+  }
+}
+
+class FakeUserRepo extends Fake implements UserRepo {
   @override
   Stream<UserModel> getUserDetail(String uid) {
     return Stream.value(_fakeUser(uid));

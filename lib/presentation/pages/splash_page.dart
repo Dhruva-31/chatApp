@@ -3,14 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/login_page.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/user_details_page.dart';
 import 'package:firebase_auth_1/presentation/pages/navigation_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SplashPage extends StatelessWidget {
-  final FirestoreMethods firestoreMethods;
-  const SplashPage({super.key, required this.firestoreMethods});
+  const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,17 +48,11 @@ class SplashPage extends StatelessWidget {
             final name = data["name"] as String?;
 
             if (name == null || name.isEmpty) {
-              return UserDetailsPage(
-                firestoreMethods: firestoreMethods,
-                myId: uid,
-              );
+              return UserDetailsPage(myId: uid);
             }
 
-            firestoreMethods.updateUserOnLogin(userSnap.data!.id);
-            return NavigationPage(
-              firestoreMethods: firestoreMethods,
-              myId: uid,
-            );
+            context.read<UserRepo>().updateUserOnLogin(userSnap.data!.id);
+            return NavigationPage(myId: uid);
           },
         );
       },

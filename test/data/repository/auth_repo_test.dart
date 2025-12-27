@@ -19,7 +19,7 @@ void main() {
     repo = AuthRepo(firebase, firestore);
   });
 
-  group('AuthRepo', () {
+  group('AuthRepo - ', () {
     group('Email Sign In', () {
       test('success', () async {
         when(

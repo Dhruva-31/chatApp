@@ -1,4 +1,3 @@
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth_1/data/model/user_model.dart';
@@ -50,11 +49,7 @@ Widget userOptions(BuildContext context, UserModel user, String myId) {
             Navigator.pop(context);
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ChatPage(
-                  secondUser: user,
-                  myId: myId,
-                  firestoreMethods: FirestoreMethods(),
-                ),
+                builder: (context) => ChatPage(secondUser: user, myId: myId),
               ),
             );
           },

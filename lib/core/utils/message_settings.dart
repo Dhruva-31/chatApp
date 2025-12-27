@@ -1,7 +1,8 @@
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
 import 'package:firebase_auth_1/presentation/widgets/alert_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/option_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void showMessageSettings(
   BuildContext context,
@@ -26,6 +27,7 @@ Widget messageSettings(
   String uid2,
   String senderId,
 ) {
+  final ChatRepo chatRepo = context.read<ChatRepo>();
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
     child: Column(
@@ -55,7 +57,7 @@ Widget messageSettings(
                   content: 'Are you sure you want to delete this message?',
                   onPressed: () {
                     Navigator.pop(context);
-                    FirestoreMethods().deleteMessage(
+                    chatRepo.deleteMessage(
                       roomId: roomId,
                       messageId: messageId,
                       deleteForUser: uid1,
@@ -81,7 +83,7 @@ Widget messageSettings(
                     content: 'Are you sure you want to delete this message?',
                     onPressed: () {
                       Navigator.pop(context);
-                      FirestoreMethods().deleteMessage(
+                      chatRepo.deleteMessage(
                         roomId: roomId,
                         messageId: messageId,
                       );

@@ -1,8 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
 import 'package:firebase_auth_1/presentation/pages/auth_pages/delete_acc_page.dart';
 import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
@@ -11,34 +11,23 @@ import 'package:firebase_auth_1/presentation/widgets/switch_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_profile_widget.dart';
 
 class ProfilePage extends StatefulWidget {
-  final FirestoreMethods firestoreMethods;
   final String myId;
 
-  const ProfilePage({
-    super.key,
-    required this.firestoreMethods,
-    required this.myId,
-  });
+  const ProfilePage({super.key, required this.myId});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late final Stream _userStream;
   dynamic _cachedUser;
-
-  @override
-  void initState() {
-    super.initState();
-    _userStream = widget.firestoreMethods.getUserDetail(widget.myId);
-  }
 
   @override
   Widget build(BuildContext context) {
     final bool dark = context.select<SettingsProvider, bool>(
       (provider) => provider.dark,
     );
+    final UserRepo userRepo = context.read<UserRepo>();
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: SingleChildScrollView(
         child: StreamBuilder(
-          stream: _userStream,
+          stream: userRepo.getUserDetail(widget.myId),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               _cachedUser = snapshot.data;

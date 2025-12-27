@@ -1,21 +1,21 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/model/chatroom_model.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/chat_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
-  final FirestoreMethods firestoreMethods;
   final String myId;
-  const HomePage({
-    super.key,
-    required this.firestoreMethods,
-    required this.myId,
-  });
+  const HomePage({super.key, required this.myId});
 
   @override
   Widget build(BuildContext context) {
+    final ChatRepo chatRepo = context.read<ChatRepo>();
+    final UserRepo userRepo = context.read<UserRepo>();
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80,
@@ -30,7 +30,7 @@ class HomePage extends StatelessWidget {
         ),
       ),
       body: StreamBuilder(
-        stream: firestoreMethods.getChatRooms(myId),
+        stream: chatRepo.getChatRooms(myId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -49,12 +49,13 @@ class HomePage extends StatelessWidget {
             child: ListView.builder(
               itemCount: chatRooms.length,
               itemBuilder: (context, index) {
-                final chatRoom = chatRooms[index];
-                final secondUserId = (myId == chatRoom.participants[0])
-                    ? chatRoom.participants[1]
-                    : chatRoom.participants[0];
+                final ChatRoomModel chatRoom = chatRooms[index];
+                final secondUserId = chatRepo.getOtherParticipantId(
+                  myId,
+                  chatRoom.participants,
+                );
                 return StreamBuilder(
-                  stream: firestoreMethods.getUserDetail(secondUserId),
+                  stream: userRepo.getUserDetail(secondUserId),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
                       final toUserData = snapshot.data;
@@ -67,7 +68,6 @@ class HomePage extends StatelessWidget {
                                 builder: (context) => ChatPage(
                                   secondUser: toUserData,
                                   myId: myId,
-                                  firestoreMethods: firestoreMethods,
                                 ),
                               ),
                             );

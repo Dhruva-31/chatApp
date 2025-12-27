@@ -190,7 +190,32 @@ class FirestoreMethods {
       "deletedAt.$uid": now,
       "lastDeletedAt.$uid": now,
       'unseenCount.$uid': 0,
+      "lastMessageFor.$uid": {"at": 0, "by": '', "text": ''},
     });
+
+    await markAllMessagesDeletedForUser(docRef, uid);
+  }
+
+  Future<void> markAllMessagesDeletedForUser(
+    DocumentReference roomRef,
+    String uid,
+  ) async {
+    final messagesQuery = await roomRef
+        .collection("messages")
+        .where("deletedFor", whereNotIn: [uid])
+        .get();
+
+    if (messagesQuery.docs.isEmpty) return;
+
+    final batch = _instance.batch();
+
+    for (final doc in messagesQuery.docs) {
+      batch.update(doc.reference, {
+        "deletedFor": FieldValue.arrayUnion([uid]),
+      });
+    }
+
+    await batch.commit();
   }
 
   Future<void> sendMessage({

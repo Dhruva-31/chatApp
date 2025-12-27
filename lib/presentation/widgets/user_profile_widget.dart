@@ -20,7 +20,7 @@ class UserProfileWidget extends StatelessWidget {
     String year = date.year.toString();
     return Card(
       child: SizedBox(
-        height: 380,
+        height: 400,
         width: double.infinity,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -52,65 +52,67 @@ class UserProfileWidget extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 40),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          key: Key('name'),
-                          'name : ${user.name}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            key: Key('name'),
+                            'name : ${user.name}',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      user.uid == myId
-                          ? GestureDetector(
-                              key: Key('edit button'),
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => EditNameWidget(
-                                    controller: nameController,
-                                    onSave: () {
-                                      FirestoreMethods().updateUserName(
-                                        nameController.text.trim(),
-                                      );
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                );
-                              },
-                              child: const Icon(
-                                Icons.edit,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ],
-                  ),
-                  Divider(thickness: 0.1),
-                  SizedBox(height: 20),
-                  Text(
-                    'email : ${user.email}',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Divider(thickness: 0.1),
-                  SizedBox(height: 20),
-                  Text(
-                    'created at : $day/$month/$year',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Divider(thickness: 0.1),
-                ],
+                        user.uid == myId
+                            ? GestureDetector(
+                                key: Key('edit button'),
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => EditNameWidget(
+                                      controller: nameController,
+                                      onSave: () {
+                                        FirestoreMethods().updateUserName(
+                                          nameController.text.trim(),
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ],
+                    ),
+                    Divider(thickness: 0.1),
+                    SizedBox(height: 20),
+                    Text(
+                      'email : ${user.email}',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Divider(thickness: 0.1),
+                    SizedBox(height: 20),
+                    Text(
+                      'created at : $day/$month/$year',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Divider(thickness: 0.1),
+                  ],
+                ),
               ),
             ],
           ),

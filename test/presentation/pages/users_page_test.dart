@@ -1,18 +1,20 @@
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/users_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('UserPage test - ', () {
     testWidgets('When no users', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: UsersPage(
-            firestoreMethods: FakeFireStoreMethodsWithNoUsers(),
-            myId: '2',
-          ),
+        MultiProvider(
+          providers: [
+            Provider<UserRepo>.value(value: FakeUserRepoWithNoUsers()),
+          ],
+          child: MaterialApp(home: UsersPage(myId: '2')),
         ),
       );
 
@@ -30,11 +32,9 @@ void main() {
 
     testWidgets('When users exists', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: UsersPage(
-            firestoreMethods: FakeFireStoreMethodsWithUsers(),
-            myId: '2',
-          ),
+        MultiProvider(
+          providers: [Provider<UserRepo>.value(value: FakeUserRepoWithUsers())],
+          child: MaterialApp(home: UsersPage(myId: '2')),
         ),
       );
 
@@ -52,7 +52,7 @@ void main() {
   });
 }
 
-class FakeFireStoreMethodsWithUsers extends Fake implements FirestoreMethods {
+class FakeUserRepoWithUsers extends Mock implements UserRepo {
   List<UserModel> users = [
     UserModel(
       uid: '1',
@@ -87,7 +87,7 @@ class FakeFireStoreMethodsWithUsers extends Fake implements FirestoreMethods {
   }
 }
 
-class FakeFireStoreMethodsWithNoUsers extends Fake implements FirestoreMethods {
+class FakeUserRepoWithNoUsers extends Mock implements UserRepo {
   @override
   Stream<List<UserModel>> getUsers(String currentId) {
     return Stream.value([]);

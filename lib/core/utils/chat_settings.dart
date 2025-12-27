@@ -1,9 +1,11 @@
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/UserProfilePage.dart';
 import 'package:firebase_auth_1/presentation/widgets/alert_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/option_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void showChatOptions(
   BuildContext context,
@@ -24,6 +26,8 @@ Widget chatSettings(
   String uid1,
   String uid2,
 ) {
+  final UserRepo userRepo = context.read<UserRepo>();
+  final ChatRepo chatRepo = context.read<ChatRepo>();
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
     child: Column(
@@ -46,7 +50,7 @@ Widget chatSettings(
           label: "View Profile",
           onTap: () async {
             Navigator.pop(context);
-            UserModel user = await FirestoreMethods().getUserDetail(uid2).first;
+            UserModel user = await userRepo.getUserDetail(uid2).first;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => UserProfilePage(user: user, myId: uid1),
@@ -54,13 +58,7 @@ Widget chatSettings(
             );
           },
         ),
-        OptionWidget(
-          icon: Icons.notifications,
-          label: "Mute Notifications",
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
+
         OptionWidget(
           icon: Icons.delete,
           label: "Delete Chat",
@@ -73,7 +71,7 @@ Widget chatSettings(
                   content: 'Are you sure you want to delete this chat?',
                   onPressed: () {
                     Navigator.pop(context);
-                    FirestoreMethods().clearChatForUser(roomId, uid1);
+                    chatRepo.clearChatForUser(roomId, uid1);
                     Navigator.pop(context);
                   },
                 );

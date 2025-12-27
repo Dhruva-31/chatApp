@@ -2,25 +2,22 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_auth_1/presentation/widgets/message_list_widget.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth_1/core/utils/chat_settings.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/UserProfilePage.dart';
+import 'package:firebase_auth_1/presentation/widgets/message_list_widget.dart';
 import 'package:firebase_auth_1/presentation/widgets/textfield_widget.dart';
+import 'package:provider/provider.dart';
 
 class ChatPage extends StatefulWidget {
   final UserModel secondUser;
   final String myId;
-  final FirestoreMethods firestoreMethods;
-  const ChatPage({
-    super.key,
-    required this.secondUser,
-    required this.myId,
-    required this.firestoreMethods,
-  });
+
+  const ChatPage({super.key, required this.secondUser, required this.myId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -29,6 +26,8 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final TextEditingController messageController = TextEditingController();
   late String roomId;
+  late ChatRepo chatRepo;
+  late UserRepo userRepo;
   StreamSubscription? _messageSubscription;
   bool _isInForeground = true;
 
@@ -36,11 +35,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    roomId = widget.firestoreMethods.generateRoomId(
-      widget.myId,
-      widget.secondUser.uid,
-    );
-    widget.firestoreMethods.resetUnseenCount(roomId, widget.myId);
+    chatRepo = context.read<ChatRepo>();
+    userRepo = context.read<UserRepo>();
+    roomId = chatRepo.generateRoomId(widget.myId, widget.secondUser.uid);
+    chatRepo.resetUnseenCount(roomId, widget.myId);
     _startListeningForNewMessages();
     messageController.addListener(() {
       setState(() {});
@@ -51,26 +49,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _isInForeground = state == AppLifecycleState.resumed;
     if (_isInForeground) {
-      widget.firestoreMethods.resetUnseenCount(roomId, widget.myId);
+      chatRepo.resetUnseenCount(roomId, widget.myId);
     }
   }
 
   void _startListeningForNewMessages() {
-    _messageSubscription = widget.firestoreMethods
+    _messageSubscription = chatRepo
         .getMessages(roomId: roomId, uid: widget.myId)
         .listen((messages) {
-          if (!_isInForeground) return;
-
-          widget.firestoreMethods.resetUnseenCount(roomId, widget.myId);
-          final unseenMessages = messages.where(
-            (m) => m.senderId == widget.secondUser.uid && !m.isSeen,
+          chatRepo.handleMessagesSeen(
+            messages: messages,
+            roomId: roomId,
+            myId: widget.myId,
+            otherUserId: widget.secondUser.uid,
+            isInForeground: _isInForeground,
           );
-          if (unseenMessages.isNotEmpty) {
-            widget.firestoreMethods.markMessageAsSeen(
-              roomId,
-              widget.secondUser.uid,
-            );
-          }
         });
   }
 
@@ -79,13 +72,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _messageSubscription?.cancel();
     messageController.dispose();
-    widget.firestoreMethods.updateUserTyping('');
+    userRepo.clearTypingStatus();
     super.dispose();
   }
 
-  bool checkDayChanged(int day) {
-    if (DateTime.now().day != day) return true;
-    return false;
+  void _handleSendMessage() {
+    chatRepo.handleSendMessage(
+      message: messageController.text,
+      myId: widget.myId,
+      otherUserId: widget.secondUser.uid,
+      onMessageSent: () => messageController.clear(),
+    );
+  }
+
+  void _handleTypingChange(String value) {
+    userRepo.updateUserTyping(value.isNotEmpty ? widget.secondUser.uid : '');
   }
 
   @override
@@ -105,15 +106,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ),
           ),
           child: StreamBuilder(
-            stream: widget.firestoreMethods.getUserDetail(userData.uid),
+            stream: userRepo.getUserDetail(userData.uid),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
+                return const SizedBox.shrink();
               }
 
-              final data = snapshot.data!;
-              final isOnline = data.isOnline;
-              final lastSeen = data.lastSeen;
+              final UserModel data = snapshot.data!;
+              final statusText = chatRepo.getStatusText(
+                isOnline: data.isOnline,
+                typingTo: data.typingTo,
+                myId: widget.myId,
+                lastSeen: data.lastSeen,
+              );
+              final isTyping = data.typingTo == widget.myId;
               final name = data.name;
               final profilePic = data.profilePic;
 
@@ -147,22 +153,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         name,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      data.typingTo == widget.myId
-                          ? Text(
-                              'typing...',
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(
-                                    color: Colors.green,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                            )
-                          : Text(
-                              isOnline
-                                  ? 'online'
-                                  : 'last seen ${lastSeen.hour.toString().padLeft(2, '0')}:${lastSeen.minute.toString().padLeft(2, '0')} ${checkDayChanged(lastSeen.day) ? 'on ${lastSeen.day}' : 'today'}',
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(color: Colors.white70),
-                            ),
+                      Text(
+                        statusText,
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                          color: isTyping ? Colors.green : Colors.white70,
+                          fontStyle: isTyping
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -186,7 +185,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           children: [
             Expanded(
               child: MessageListWidget(
-                firestoreMethods: widget.firestoreMethods,
                 roomId: roomId,
                 myId: widget.myId,
                 otherUserId: userData.uid,
@@ -200,11 +198,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     maxLines: 5,
                     minLines: 1,
                     borderRaidus: 20,
-                    onChanged: (value) {
-                      widget.firestoreMethods.updateUserTyping(
-                        value.isNotEmpty ? userData.uid : '',
-                      );
-                    },
+                    onChanged: _handleTypingChange,
                   ),
                 ),
 
@@ -217,15 +211,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         : const Color(0xFF6C63FF),
                   ),
                   child: IconButton(
-                    onPressed: () {
-                      if (messageController.text.trim().isEmpty) return;
-                      widget.firestoreMethods.sendMessage(
-                        text: messageController.text.trim(),
-                        uid1: widget.myId,
-                        uid2: userData.uid,
-                      );
-                      messageController.clear();
-                    },
+                    onPressed: _handleSendMessage,
                     icon: Icon(Icons.send, color: Colors.white70),
                   ),
                 ),

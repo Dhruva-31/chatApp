@@ -1,10 +1,12 @@
 import 'package:firebase_auth_1/data/model/message_model.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/pages/chat_page.dart';
 import 'package:firebase_auth_1/presentation/widgets/message_list_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('chat Page test - ', () {
@@ -20,17 +22,16 @@ void main() {
         createdAt: DateTime.fromMicrosecondsSinceEpoch(2),
       );
       await tester.pumpWidget(
-        MaterialApp(
-          home: ChatPage(
-            secondUser: secondUser,
-            firestoreMethods: FakeFirestoreMethodsWithMessages(),
-            myId: '1',
+        MultiProvider(
+          providers: [
+            Provider<UserRepo>.value(value: FakeUserRepo()),
+            Provider<ChatRepo>.value(value: FakeChatRepoWithMessages()),
+          ],
+          child: MaterialApp(
+            home: ChatPage(secondUser: secondUser, myId: '1'),
           ),
         ),
       );
-
-      //INTIAL
-      expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
 
       await tester.pump();
 
@@ -54,17 +55,16 @@ void main() {
         createdAt: DateTime.fromMicrosecondsSinceEpoch(2),
       );
       await tester.pumpWidget(
-        MaterialApp(
-          home: ChatPage(
-            secondUser: secondUser,
-            firestoreMethods: FakeFirestoreMethodsWithNoMessages(),
-            myId: '1',
+        MultiProvider(
+          providers: [
+            Provider<UserRepo>.value(value: FakeUserRepo()),
+            Provider<ChatRepo>.value(value: FakeChatRepoWithNoMessages()),
+          ],
+          child: MaterialApp(
+            home: ChatPage(secondUser: secondUser, myId: '1'),
           ),
         ),
       );
-
-      //INTIAL
-      expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
 
       await tester.pump();
 
@@ -78,29 +78,7 @@ void main() {
   });
 }
 
-class FakeFirestoreMethodsWithNoMessages extends Fake
-    implements FirestoreMethods {
-  final fakeMessages = [
-    MessageModel(
-      messageId: '1',
-      text: 'Hello',
-      senderId: 'me',
-      isSeen: true,
-      createdAt: DateTime.now(),
-    ),
-  ];
-
-  final fakeUser = UserModel(
-    uid: '1',
-    name: 'Test1',
-    email: 'test1@gmail.com',
-    profilePic: '',
-    isOnline: false,
-    fcmToken: '',
-    lastSeen: DateTime.fromMicrosecondsSinceEpoch(1),
-    createdAt: DateTime.fromMicrosecondsSinceEpoch(1),
-  );
-
+class FakeChatRepoWithNoMessages extends Fake implements ChatRepo {
   @override
   String generateRoomId(String uid1, String uid2) {
     return 'fake_room_id';
@@ -115,28 +93,66 @@ class FakeFirestoreMethodsWithNoMessages extends Fake
   }
 
   @override
+  Future<void> resetUnseenCount(String roomId, String userId) async {
+    return;
+  }
+
+  @override
+  void handleSendMessage({
+    required String message,
+    required String myId,
+    required String otherUserId,
+    required void Function() onMessageSent,
+  }) {}
+
+  @override
+  void handleMessagesSeen({
+    required List<MessageModel> messages,
+    required String roomId,
+    required String myId,
+    required String otherUserId,
+    required bool isInForeground,
+  }) {}
+
+  @override
+  String getStatusText({
+    required bool isOnline,
+    required String typingTo,
+    required String myId,
+    required DateTime lastSeen,
+  }) {
+    return '';
+  }
+
+  @override
+  String formatMessageTime(DateTime timestamp) {
+    return '';
+  }
+}
+
+class FakeUserRepo extends Fake implements UserRepo {
+  final fakeUser = UserModel(
+    uid: '1',
+    name: 'Test1',
+    email: 'test1@gmail.com',
+    profilePic: '',
+    isOnline: false,
+    fcmToken: '',
+    lastSeen: DateTime.fromMicrosecondsSinceEpoch(1),
+    createdAt: DateTime.fromMicrosecondsSinceEpoch(1),
+  );
+  @override
   Stream<UserModel> getUserDetail(String uid) {
     return Stream.value(fakeUser);
   }
 
   @override
-  Future<void> resetUnseenCount(String roomId, String myId) async {
-    // do nothing
-  }
-
-  @override
-  Future<void> markMessageAsSeen(String roomId, String uid) async {
-    // do nothing
-  }
-
-  @override
-  Future<void> updateUserTyping(String uid) async {
-    // do nothing
+  Future<void> clearTypingStatus() async {
+    return;
   }
 }
 
-class FakeFirestoreMethodsWithMessages extends Fake
-    implements FirestoreMethods {
+class FakeChatRepoWithMessages extends Fake implements ChatRepo {
   final fakeMessages = [
     MessageModel(
       messageId: '1',
@@ -172,22 +188,39 @@ class FakeFirestoreMethodsWithMessages extends Fake
   }
 
   @override
-  Stream<UserModel> getUserDetail(String uid) {
-    return Stream.value(fakeUser);
+  Future<void> resetUnseenCount(String roomId, String userId) async {
+    return;
   }
 
   @override
-  Future<void> resetUnseenCount(String roomId, String myId) async {
-    // do nothing
+  void handleSendMessage({
+    required String message,
+    required String myId,
+    required String otherUserId,
+    required void Function() onMessageSent,
+  }) {}
+
+  @override
+  void handleMessagesSeen({
+    required List<MessageModel> messages,
+    required String roomId,
+    required String myId,
+    required String otherUserId,
+    required bool isInForeground,
+  }) {}
+
+  @override
+  String getStatusText({
+    required bool isOnline,
+    required String typingTo,
+    required String myId,
+    required DateTime lastSeen,
+  }) {
+    return '';
   }
 
   @override
-  Future<void> markMessageAsSeen(String roomId, String uid) async {
-    // do nothing
-  }
-
-  @override
-  Future<void> updateUserTyping(String uid) async {
-    // do nothing
+  String formatMessageTime(DateTime timestamp) {
+    return '';
   }
 }

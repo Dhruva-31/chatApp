@@ -1,18 +1,17 @@
 // message_list_widget.dart
+import 'package:firebase_auth_1/data/repository/chat_repo.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth_1/data/model/message_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
 import 'package:firebase_auth_1/core/utils/message_settings.dart';
+import 'package:provider/provider.dart';
 
 class MessageListWidget extends StatelessWidget {
-  final FirestoreMethods firestoreMethods;
   final String roomId;
   final String myId;
   final String otherUserId;
 
   const MessageListWidget({
     super.key,
-    required this.firestoreMethods,
     required this.roomId,
     required this.myId,
     required this.otherUserId,
@@ -20,11 +19,12 @@ class MessageListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chatRepo = context.read<ChatRepo>();
     return StreamBuilder<List<MessageModel>>(
-      stream: firestoreMethods.getMessages(roomId: roomId, uid: myId),
+      stream: chatRepo.getMessages(roomId: roomId, uid: myId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const SizedBox.shrink();
         }
 
         if (snapshot.data!.isEmpty) {
@@ -89,8 +89,7 @@ class MessageListWidget extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                "${message.createdAt.hour.toString().padLeft(2, '0')}:"
-                                "${message.createdAt.minute.toString().padLeft(2, '0')}",
+                                chatRepo.formatMessageTime(message.createdAt),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const SizedBox(width: 5),

@@ -1,6 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_auth_1/data/model/user_model.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/bloc/authBloc/auth_bloc.dart';
 import 'package:firebase_auth_1/presentation/pages/profile_page.dart';
 import 'package:firebase_auth_1/presentation/providers/settings_provider.dart';
@@ -19,13 +19,9 @@ void main() {
             create: (_) => FakeSettingsProvider(),
           ),
           BlocProvider<AuthBloc>(create: (_) => FakeAuthBloc()),
+          Provider<UserRepo>.value(value: FakeUserRepo()),
         ],
-        child: MaterialApp(
-          home: ProfilePage(
-            firestoreMethods: FakeFireStoreMethods(),
-            myId: '1',
-          ),
-        ),
+        child: MaterialApp(home: ProfilePage(myId: '1')),
       ),
     );
 
@@ -39,7 +35,7 @@ void main() {
   });
 }
 
-class FakeFireStoreMethods extends Fake implements FirestoreMethods {
+class FakeUserRepo extends Fake implements UserRepo {
   final user = UserModel(
     uid: '2',
     name: 'Test1',

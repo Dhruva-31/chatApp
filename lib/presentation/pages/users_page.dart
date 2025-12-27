@@ -2,20 +2,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth_1/core/utils/user_options.dart';
-import 'package:firebase_auth_1/data/services/firestore_methods.dart';
+import 'package:firebase_auth_1/data/repository/user_repo.dart';
 import 'package:firebase_auth_1/presentation/widgets/user_card_widget.dart';
+import 'package:provider/provider.dart';
 
 class UsersPage extends StatelessWidget {
-  final FirestoreMethods firestoreMethods;
   final String myId;
-  const UsersPage({
-    super.key,
-    required this.firestoreMethods,
-    required this.myId,
-  });
+  const UsersPage({super.key, required this.myId});
 
   @override
   Widget build(BuildContext context) {
+    final UserRepo userRepo = context.read<UserRepo>();
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80,
@@ -30,7 +27,7 @@ class UsersPage extends StatelessWidget {
         ),
       ),
       body: StreamBuilder(
-        stream: firestoreMethods.getUsers(myId),
+        stream: userRepo.getUsers(myId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
